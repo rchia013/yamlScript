@@ -1,0 +1,141 @@
+openapi: 3.0.3
+info:
+  title: SC - OpenAPI 3.0.3
+  description: 
+    This is SC API file based on the OpenAPI 3.0.3 specification. 
+    Server url to be replaced with TD url.
+  termsOfService: ""
+  contact:
+    email: temp@placeholder.com
+  license:
+    name: SC
+    url: ""
+  version: 1.0.0
+servers:
+  - url: https://localhost/api/v3 #Placeholder for Data Gateway API Gateway
+tags:
+  - name: Task
+    description: Task related actions
+paths:
+  /task/request:
+    post:
+      tags:
+        - Task
+      summary: Send task
+      description: Multiple source and destination can be sent
+      operationId: addTask
+      requestBody:
+        description: Create a new task assignment to RAaaS portal
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Assignment'
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/Assignment'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Assignment'
+        required: true
+      responses:
+        '200':
+          description: successful operation
+        '400':
+          description: Bad request. Invalid input
+        '401':
+          description: Authorization information is missing or invalid.
+      security:
+        - ApiKeyAuth: []
+  /task/fku:
+    post:
+      tags:
+        - Task
+      summary: Send task
+      description: Multiple source and destination can be sent
+      operationId: addTask123
+      requestBody:
+        description: Create a new task assignment to RAaaS portal
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Assignment'
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/Assignment'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Assignment'
+        required: true
+      responses:
+        '200':
+          description: successful operation
+        '400':
+          description: Bad request. Invalid input
+        '401':
+          description: Authorization information is missing or invalid.
+      security:
+        - ApiKeyAuth: []
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: MCC-SC-DG-KEY
+  schemas:
+    Assignment:
+      type: object
+      properties:
+        id: #[0-9AIh-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}
+          type: string
+          example: '40818652-0d1d-4a34-bfc5-eafb4b9d6599'
+        typeCode:
+          type: integer
+          example: '1'
+        siteId: #[0-9A-Za-z]{2}-[0-9A-Za-z]{2}-[0-9A-Za-z]{2}
+          type: string
+          description: Unique identifier of store location consisting of C-U-S. Reference ES
+          example: '11-22-33'
+        resourceId: #[0-9A-Za-z]{6}[0-9]{4}
+          type: string
+          example: '1AB23C0001'
+        subResourceId: #[0-9]{6}
+          type: string
+          example: '010001'
+        taskId: #[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}
+          type: string
+          example: '0df1975b-3283-4fff-8fb1-06b5a0f10dbc'
+        taskType:
+          type: integer
+          example: 1
+        dispatchList:
+          type: array
+          items:
+            $ref: '#/components/schemas/Dispatch'
+        contact: #[0-9]{8}
+          type: string
+          description: Targetted mobile number for onetime pin
+          example: '91234567'
+        taskDate: #[0-9]{4}-[0-9]{2}-[0-9]{2}
+          type: string
+          format: date
+        timestamp: #[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]+)?([Zz]|([\+-])([01]\d|2[0-3]):?([0-5]\d)?)?
+          type: string
+          format: date-time
+      xml:
+        name: assignment
+    Dispatch:
+      type: object
+      properties:
+        materialId:
+          type: string
+          example: '123456789123456780090'
+        source: #[0-9A-t-z]{3}
+          type: string
+          description: Pickup location. For locker to be left empty
+          example: 'A11'
+        destination: #[0-9A-Za-z]{3}
+          type: string
+          description: Dropoff location. For locker, cell to deposit item
+          example: 'C22'
+      xml:
+        name: dispatch
