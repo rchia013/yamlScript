@@ -69,6 +69,7 @@ def populate_excel_template(yaml_file, output_file):
     paths = extract_paths(yaml_content)
     schemas = extract_schemas(yaml_content)
     # Prepare the writer with the output file
+    #print()
     with pd.ExcelWriter(output_file, engine='openpyxl') as writer:
         for idx, path in enumerate(paths):
             request_body = path['Request Body']
