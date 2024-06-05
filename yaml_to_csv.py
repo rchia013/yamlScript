@@ -7,7 +7,7 @@ def extract_paths(yaml_content):
     path_details = []
     for path, methods in paths.items():
         for method, details in methods.items():
-            api_section = 'Body' if method.upper() == 'POST' else 'Parameter' if method.upper() == 'GET' else 'N/A'
+            api_section = 'Body'
             path_details.append({
                 'Path': path,
                 'Method': method.upper(),
@@ -71,7 +71,7 @@ def handle_get_request(path, schemas):
                 schema_name = schema.split('/')[-1]
                 schema_details = expand_schema(schema_name, schemas, parent='')
                 for detail in schema_details:
-                    detail['API Section'] = 'Parameter'
+                    detail['API Section'] = 'Body'
                 response_schema_details.extend(schema_details)
     return response_schema_details
 
@@ -124,8 +124,12 @@ def populate_excel_template(yaml_file, output_file):
             # Define the sheet name based on path and method
             sheet_name = f"Path_{idx+1}"
 
-            # Write the DataFrame to the new sheet
-            schema_df.to_excel(writer, sheet_name=sheet_name, index=False)
+           # Create a DataFrame for the method identifier
+            identifier_df = pd.DataFrame([[f"Method: {method}"]], columns=["Method Identifier"])
+
+            # Write the identifier and schema DataFrames to the new sheet
+            identifier_df.to_excel(writer, sheet_name=sheet_name, index=False, header=False)
+            schema_df.to_excel(writer, sheet_name=sheet_name, startrow=1, index=False)
 
 
 
