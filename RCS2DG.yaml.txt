@@ -1,0 +1,543 @@
+openapi: 3.0.3
+info:
+  title: SC - OpenAPI 3.0.3
+  description: 
+    This is SC API file based on the OpenAPI 3.0.3 specification. 
+    Server url to be replaced with TD url.
+  termsOfService: ""
+  contact:
+    email: temp@placeholder.com
+  license:
+    name: SC
+    url: ""
+  version: 1.0.0
+servers:
+  - url: https://localhost/api/v3 #Placeholder for Data Gateway API Gateway
+tags:
+  - name: Task
+    description: Task related actions
+  - name: Resource
+    description: Health, maintenance, notification and stock
+paths:
+  /task/reqstatus:
+    get:
+      tags:
+        - Task
+      summary: Get existing request status update
+      parameters: 
+        - in: header
+          name: something
+          schema:
+            type: string
+      description: Multiple request status update can be provided
+      operationId: getReqUpdate
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskReqStatus'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/TaskReqStatus'
+        '400':
+          description: Bad request. Invalid status value
+        '401':
+          description: Authorization information is missing or invalid.
+      security:
+        - ApiKeyAuth: []
+  /task/updates:
+    get:
+      tags:
+        - Task
+      summary: Get existing task status update
+      description: Multiple task status update can be provided
+      operationId: getTaskUpdate
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskStatus'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/TaskStatus'
+        '400':
+          description: Bad request. Invalid status value
+        '401':
+          description: Authorization information is missing or invalid.
+      security:
+        - ApiKeyAuth: []
+  /task/request:
+    post:
+      tags:
+        - Task
+      summary: Get existing task status update
+      description: Multiple task status update can be provided
+      operationId: addTask
+      requestBody:
+        description: Create a new task assignment to RAaaS portal
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Assignment'
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/Assignment'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Assignment'
+        required: true
+      responses:
+        '200':
+          description: successful operation
+        '400':
+          description: Bad request. Invalid input
+        '401':
+          description: Authorization information is missing or invalid.
+      security:
+        - ApiKeyAuth: []
+  /resource/updates:
+    get:
+      tags:
+        - Resource
+      summary: Get health status and list of interfaces that have changes
+      description: Multiple health status records and interface changes records update can be provided
+      operationId: getStatusUpdates
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Health'
+        '400':
+          description: Bad request. Invalid input
+        '401':
+          description: Authorization information is missing or invalid.
+      security:
+        - ApiKeyAuth: []
+  /resource/maintnotification:
+    get:
+      tags:
+        - Resource
+      summary: Get maintenance notification
+      description: Maintenance notification
+      operationId: getMaintenanceNotification
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaintNotification'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/MaintNotification'
+        '400':
+          description: Bad request. Invalid input
+        '401':
+          description: Authorization information is missing or invalid.
+      security:
+        - ApiKeyAuth: []
+  /resource/location:
+    get:
+      tags:
+        - Resource
+      summary: Get location update
+      description: location
+      operationId: getLocation
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocUpdate'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/LocUpdate'
+        '400':
+          description: Bad request. Invalid input
+        '401':
+          description: Authorization information is missing or invalid.
+      security:
+        - ApiKeyAuth: []
+  /resource/stocknotification:
+    get:
+      tags:
+        - Resource
+      summary: Get low stock notifications
+      description: stock notification
+      operationId: getStockNotification
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockNotification'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/StockNotification'
+        '400':
+          description: Bad request. Invalid input
+        '401':
+          description: Authorization information is missing or invalid.
+      security:
+        - ApiKeyAuth: []
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: MCC-SC-DG-KEY
+  schemas:
+    TaskReqStatus:
+      type: object
+      properties:
+        id: #[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}
+          type: string
+          example: '40818652-0d1d-4a34-bfc5-eafb4b9d6599'
+        typeCode:
+          type: integer
+          example: '3'
+        statusList:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReqStatus'
+        timestamp: #[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]+)?([Zz]|([\+-])([01]\d|2[0-3]):?([0-5]\d)?)?
+          type: string
+          format: date-time
+      xml:
+        name: taskReqStatus
+    ReqStatus:
+      type: object
+      properties:
+        siteId: #[0-9A-Za-z]{2}-[0-9A-Za-z]{2}-[0-9A-Za-z]{2}
+          type: string
+          description: Unique identifier of store location consisting of C-U-S. Reference ES
+          example: '11-22-33'
+        resourceId: #[0-9A-Fa-f]{6}[0-9]{4}
+          type: string
+          example: '1AB23C0001'
+        subResourceId: #[0-9]{6}
+          type: string
+          example: '010001'
+        taskId: #[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}
+          type: string
+          example: '0df1975b-3283-4fff-8fb1-06b5a0f10dbc'
+        status:
+          type: string
+          description: status of request
+          enum:
+              - completed
+              - pending
+              - failed
+              - in progress
+      xml:
+        name: reqStatus
+    TaskStatus:
+      type: object
+      properties:
+        id: #[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}
+          type: string
+          example: '40818652-0d1d-4a34-bfc5-eafb4b9d6599'
+        typeCode:
+          type: integer
+          example: '2'
+        updateList:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatusUpdate'
+        timestamp: #[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]+)?([Zz]|([\+-])([01]\d|2[0-3]):?([0-5]\d)?)?
+          type: string
+          format: date-time
+      xml:
+        name: taskStatus
+    StatusUpdate:
+      type: object
+      properties:
+        siteId: #[0-9A-Za-z]{2}-[0-9A-Za-z]{2}-[0-9A-Za-z]{2}
+          type: string
+          description: Unique identifier of store location consisting of C-U-S. Reference ES
+          example: '11-22-33'
+        resourceId: #[0-9A-Fa-f]{6}[0-9]{4}
+          type: string
+          example: '1AB23C0001'
+        subResourceId:
+          type: string
+          example: '010001'
+        taskId: #[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}
+          type: string
+          example: '0df1975b-3283-4fff-8fb1-06b5a0f10dbc'
+        taskType:
+          type: integer
+          example: 1
+        materialId:
+          type: string
+          example: '123456789123456780090'
+        status:
+          type: string
+          description: status of request
+          enum:
+              - completed
+              - pending
+              - failed
+              - in progress
+        pin:
+          type: string
+          example: '123456'
+      xml:
+        name: statusUpdate
+    Assignment:
+      type: object
+      properties:
+        id: #[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}
+          type: string
+          example: '40818652-0d1d-4a34-bfc5-eafb4b9d6599'
+        typeCode:
+          type: integer
+          example: '1'
+        siteId: #[0-9A-Za-z]{2}-[0-9A-Za-z]{2}-[0-9A-Za-z]{2}
+          type: string
+          description: Unique identifier of store location consisting of C-U-S. Reference ES
+          example: '11-22-33'
+        resourceId: #[0-9A-Za-z]{6}[0-9]{4}
+          type: string
+          example: '1AB23C0001'
+        subResourceId: #[0-9]{6}
+          type: string
+          example: '010001'
+        taskId: #[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}
+          type: string
+          example: '0df1975b-3283-4fff-8fb1-06b5a0f10dbc'
+        taskType:
+          type: integer
+          example: 1
+        dispatchList:
+          type: array
+          items:
+            $ref: '#/components/schemas/Dispatch'
+        contact: #[0-9]{8}
+          type: string
+          description: Targetted mobile number for onetime pin
+          example: '91234567'
+        taskDate: #[0-9]{4}-[0-9]{2}-[0-9]{2}
+          type: string
+          format: date
+        timestamp: #[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]+)?([Zz]|([\+-])([01]\d|2[0-3]):?([0-5]\d)?)?
+          type: string
+          format: date-time
+      xml:
+        name: assignment
+    Dispatch:
+      type: object
+      properties:
+        materialId:
+          type: string
+          example: '123456789123456780090'
+        source: #[0-9A-Za-z]{3}
+          type: string
+          description: Pickup location. For locker to be left empty
+          example: 'A11'
+        destination: #[0-9A-Za-z]{3}
+          type: string
+          description: Dropoff location. For locker, cell to deposit item
+          example: 'C22'
+      xml:
+        name: dispatch
+    ApiResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        type:
+          type: string
+        message:
+          type: string
+      xml:
+        name: '##default'
+    Health:
+      type: object
+      properties:
+        id: #[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}
+          type: string
+          example: '40818652-0d1d-4a34-bfc5-eafb4b9d6599'
+        typeCode:
+          type: integer
+          example: '3'
+        healthList:
+          type: array
+          items:
+            $ref: '#/components/schemas/HealthStatus'
+        timestamp: #[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]+)?([Zz]|([\+-])([01]\d|2[0-3]):?([0-5]\d)?)?
+          type: string
+          format: date-time
+      xml:
+        name: health
+    HealthStatus:
+      type: object
+      properties:
+        siteId: #[0-9A-Za-z]{2}-[0-9A-Za-z]{2}-[0-9A-Za-z]{2}
+          type: string
+          description: Unique identifier of store location consisting of C-U-S. Reference ES
+          example: '11-22-33'
+        resourceId: #[0-9A-Fa-f]{6}[0-9]{4}
+          type: string
+          example: '1AB23C0001'
+        subResourceId: #[0-9]{6}
+          type: string
+          example: '010001'
+        state:
+          type: integer
+          example: 1
+        status:
+          type: integer
+          example: 2
+        flagcode:
+          type: array
+          items: #[0-9A-Za-z]{10}
+            type: string
+            example: ['123232','12321']
+      xml:
+        name: healthStatus
+    MaintNotification:
+      type: object
+      properties:
+        id: #[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}
+          type: string
+          example: '40818652-0d1d-4a34-bfc5-eafb4b9d6599'
+        typeCode:
+          type: integer
+          example: '3'
+        maintList:
+          type: array
+          items:
+            $ref: '#/components/schemas/MaintenanceInfo'
+        timestamp: #[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]+)?([Zz]|([\+-])([01]\d|2[0-3]):?([0-5]\d)?)?
+          type: string
+          format: date-time
+      xml:
+        name: health
+    MaintenanceInfo:
+      type: object
+      properties:
+        siteId: #[0-9A-Za-z]{2}-[0-9A-Za-z]{2}-[0-9A-Za-z]{2}
+          type: string
+          description: Unique identifier of store location consisting of C-U-S. Reference ES
+          example: '11-22-33'
+        resourceId: #[0-9A-Fa-f]{6}[0-9]{4}
+          type: string
+          example: '1AB23C0001'
+        subResourceId: #[0-9]{6}
+          type: string
+          example: '010001'
+        taskId: #[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}
+          type: string
+          example: '0df1975b-3283-4fff-8fb1-06b5a0f10dbc'
+        taskDate: #[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]+)?([Zz]|([\+-])([01]\d|2[0-3]):?([0-5]\d)?)?
+          type: string
+          format: date-time
+      xml:
+        name: maintenanceInfo
+    LocUpdate:
+      type: object
+      properties:
+        id: #[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}
+          type: string
+          example: '40818652-0d1d-4a34-bfc5-eafb4b9d6599'
+        typeCode:
+          type: integer
+          example: '3'
+        locDataList:
+          type: array
+          items:
+            $ref: '#/components/schemas/LocationData'
+        timestamp: #[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]+)?([Zz]|([\+-])([01]\d|2[0-3]):?([0-5]\d)?)?
+          type: string
+          format: date-time
+      xml:
+        name: locUpdate
+    LocationData:
+      type: object
+      properties:
+        siteId: #[0-9A-Za-z]{2}-[0-9A-Za-z]{2}-[0-9A-Za-z]{2}
+          type: string
+          description: Unique identifier of store location consisting of C-U-S. Reference ES
+          example: '11-22-33'
+        resourceId: #[0-9A-Fa-f]{6}[0-9]{4}
+          type: string
+          example: '1AB23C0001'
+        subResourceId: #[0-9]{6}
+          type: string
+          example: '010001'
+        locList: 
+          $ref: '#/components/schemas/Location'
+      xml:
+        name: locationData
+    Location:
+      type: object
+      properties:
+        positionX:
+          type: integer
+        positionY:
+          type: integer
+        positionZ:
+          type: integer
+        locationCode: #[0-9A-Za-z]{8}
+          type: string
+        levelCode: #[0-9A-Za-z]{3}
+          type: string
+        flag: #[0-9A-Za-z]{2}
+          type: string
+      xml:
+        name: location
+    StockNotification:
+      type: object
+      properties:
+        id: #[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}
+          type: string
+          example: '40818652-0d1d-4a34-bfc5-eafb4b9d6599'
+        typeCode:
+          type: integer
+          example: '3'
+        NotificationList:
+          type: array
+          items:
+            $ref: '#/components/schemas/LowStockNotification'
+        timestamp: #[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]+)?([Zz]|([\+-])([01]\d|2[0-3]):?([0-5]\d)?)?
+          type: string
+          format: date-time
+      xml:
+        name: stockNotification
+    LowStockNotification:
+      type: object
+      properties:
+        siteId: #[0-9A-Za-z]{2}-[0-9A-Za-z]{2}-[0-9A-Za-z]{2}
+          type: string
+          description: Unique identifier of store location consisting of C-U-S. Reference ES
+          example: '11-22-33'
+        resourceId: #[0-9A-Za-z]{6}[0-9]{4}
+          type: string
+          example: '1AB23C0001'
+        subResourceId: #[0-9]{6}
+          type: string
+          example: '010001'
+        materialId:
+          type: string
+          example: '123456789123456780090'
+        status:
+          type: string
+          description: status of stock
+          enum:
+              - low
+              - empty
+      xml:
+        name: lowStockNotification

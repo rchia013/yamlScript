@@ -2,18 +2,6 @@ import yaml
 import pandas as pd
 import argparse
 
-def extract_info(yaml_content):
-    info = yaml_content.get('info', {})
-    return {
-        'Title': info.get('title', 'N/A'),
-        'Version': info.get('version', 'N/A'),
-        'Description': info.get('description', 'N/A')
-    }
-
-def extract_servers(yaml_content):
-    servers = yaml_content.get('servers', [])
-    return [server.get('url', 'N/A') for server in servers]
-
 def extract_paths(yaml_content):
     paths = yaml_content.get('paths', {})
     path_details = []
@@ -28,95 +16,118 @@ def extract_paths(yaml_content):
                 'Operation ID': details.get('operationId', 'N/A'),
                 'Tags': ', '.join(details.get('tags', [])),
                 'Request Body': details.get('requestBody', 'N/A'),
+                'Parameters': details.get('parameters', []),
                 'Responses': details.get('responses', 'N/A'),
                 'API Section': api_section
             })
     return path_details
 
-def extract_schemas(yaml_content):
-    components = yaml_content.get('components', {})
-    schemas = components.get('schemas', {})
+def expand_schema(schema_name, schemas, parent=''):
+    schema_info = schemas.get(schema_name, {})
+    properties = schema_info.get('properties', {})
     schema_details = []
-    processed_schemas = set()
-    
-    for schema_name, schema_info in schemas.items():
-        if schema_name not in processed_schemas:
-            properties = schema_info.get('properties', {})
-            for prop_name, prop_info in properties.items():
-                #print(prop_name,prop_info)
-                schema_details.append({ 
-                    'Schema Name': schema_name,
-                    'Property Name': prop_name,
-                    'Property Type': prop_info.get('type', 'N/A'),
-                    'Property Format': prop_info.get('format', 'N/A'),
-                    'Property Description': prop_info.get('description', 'N/A')
-                })
-            processed_schemas.add(schema_name)
-            print(processed_schemas)
-    
-    #print("Extracted Schemas:")  # Debugging statement
-    #for schema in schema_details:  # Debugging statement
-    #    print(schema)  # Debugging statement
-    
+
+    for prop_name, prop_info in properties.items():
+        prop_type = prop_info.get('type', 'N/A')
+        prop_min_length = prop_info.get('minLength', 'N/A')
+        prop_max_length = prop_info.get('maxLength', 'N/A')
+        prop_pattern = prop_info.get('pattern', 'N/A')
+        if prop_min_length == prop_max_length:
+            prop_length = prop_min_length
+        else:
+            prop_length = 'N/A'
+        prop_description = prop_info.get('description', 'N/A')
+        
+        full_prop_name = f"{parent}.{prop_name}" if parent else prop_name
+        
+        schema_details.append({
+            'Data Element Name': full_prop_name,
+            'Data Element Type': prop_type,
+            'Data Element Length': prop_length,
+            'Data Element Description': prop_description,
+            'Regular Expression': prop_pattern
+        })
+        
+        if prop_type == 'array' and 'items' in prop_info and '$ref' in prop_info['items']:
+            ref_schema_name = prop_info['items']['$ref'].split('/')[-1]
+            schema_details.extend(expand_schema(ref_schema_name, schemas, full_prop_name))
+        
+        elif prop_type == 'object' and '$ref' in prop_info:
+            ref_schema_name = prop_info['$ref'].split('/')[-1]
+            schema_details.extend(expand_schema(ref_schema_name, schemas, full_prop_name))
+
     return schema_details
+
+
+def handle_get_request(path, schemas):
+    responses = path['Responses']
+    response_schema_details = []
+    for status_code, response in responses.items():
+        content = response.get('content', {})
+        if 'application/json' in content:
+            details = content['application/json']
+            schema = details.get('schema', {}).get('$ref', '')
+            if schema.startswith('#/components/schemas/'):
+                schema_name = schema.split('/')[-1]
+                schema_details = expand_schema(schema_name, schemas, parent='')
+                for detail in schema_details:
+                    detail['API Section'] = 'Parameter'
+                response_schema_details.extend(schema_details)
+    return response_schema_details
+
+
+def handle_post_request(path, schemas):
+    request_body = path['Request Body']
+    content = request_body.get('content', {})
+    if 'application/json' in content:
+        details = content['application/json']
+        schema = details.get('schema', {}).get('$ref', '')
+        if schema.startswith('#/components/schemas/'):
+            schema_name = schema.split('/')[-1]
+            schema_details = expand_schema(schema_name, schemas, parent='')
+            for detail in schema_details:
+                detail['API Section'] = 'Body'
+            return schema_details
+    return []
+
 
 def populate_excel_template(yaml_file, output_file):
     # Load the YAML file
     with open(yaml_file, 'r') as file:
         yaml_content = yaml.safe_load(file)
 
-    # Extract data using the defined functions
+    # Extract paths and schemas from the YAML content
     paths = extract_paths(yaml_content)
-    schemas = extract_schemas(yaml_content)
+    components = yaml_content.get('components', {})
+    schemas = components.get('schemas', {})
+
     # Prepare the writer with the output file
-    #print()
     with pd.ExcelWriter(output_file, engine='openpyxl') as writer:
         for idx, path in enumerate(paths):
-            request_body = path['Request Body']
-            payload_data = []
-            processed_schemas = set()
-            if request_body != 'N/A' and 'content' in request_body:
-                content = request_body['content']
-                for content_type, details in content.items():
-                    schema = details.get('schema', {}).get('$ref', '')
-                    if schema.startswith('#/components/schemas/'):
-                        schema_name = schema.split('/')[-1]
-                        if schema_name not in processed_schemas:
-                            schema_info = [s for s in schemas if s['Schema Name'] == schema_name]
-                            for info in schema_info:
-                                payload_data.append({
-                                    'Sequence No.': '',
-                                    'API Section': path['API Section'],
-                                    'Data Element Name': info['Property Name'],
-                                    'Data Element Type': info['Property Type'],
-                                    'Data Element Length': '',
-                                    'Valid Values': '',
-                                    'Regular Expressions': '',
-                                    'Data Element Definition': info['Property Description'],
-                                    'Data Source': '',
-                                    'Business Rules': '',
-                                    'Numeric Min Value': '',
-                                    'Numeric Max Value': '',
-                                    'Enumerations': ''
-                                })
-                            processed_schemas.add(schema_name)
+            method = path['Method']
+            if method == 'GET':
+                payload_data = handle_get_request(path, schemas)
+            elif method == 'POST':
+                payload_data = handle_post_request(path, schemas)
+            else:
+                continue
 
-            # Create DataFrame for the path
-            payload_df = pd.DataFrame(payload_data, columns=[
-                'Sequence No.', 'API Section', 'Data Element Name', 'Data Element Type', 
-                'Data Element Length', 'Valid Values', 'Regular Expressions', 
-                'Data Element Definition', 'Data Source', 'Business Rules',
-                'Numeric Min Value', 'Numeric Max Value', 'Enumerations'
+            # Add sequence numbers to schema details
+            for seq_num, detail in enumerate(payload_data, start=1):
+                detail['Sequence No.'] = seq_num
+
+            # Create DataFrame for the schema details
+            schema_df = pd.DataFrame(payload_data, columns=[
+                'Sequence No.', 'API Section', 'Data Element Name', 'Data Element Type', 'Data Element Length', 'Data Element Description', 'Regular Expression'
             ])
 
-            # Add sequence numbers
-            payload_df['Sequence No.'] = range(1, len(payload_df) + 1)
-
             # Define the sheet name based on path and method
-            sheet_name = f"A_{idx+1}"
+            sheet_name = f"Path_{idx+1}"
 
             # Write the DataFrame to the new sheet
-            payload_df.to_excel(writer, sheet_name=sheet_name, index=False)
+            schema_df.to_excel(writer, sheet_name=sheet_name, index=False)
+
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Convert YAML file to Excel template.")
