@@ -11,13 +11,13 @@ def extract_paths(yaml_content):
             path_details.append({
                 'Path': path,
                 'Method': method.upper(),
-                'Summary': details.get('summary', 'N/A'),
-                'Description': details.get('description', 'N/A'),
-                'Operation ID': details.get('operationId', 'N/A'),
+                'Summary': details.get('summary', ''),
+                'Description': details.get('description', ''),
+                'Operation ID': details.get('operationId', ''),
                 'Tags': ', '.join(details.get('tags', [])),
-                'Request Body': details.get('requestBody', 'N/A'),
+                'Request Body': details.get('requestBody', ''),
                 'Parameters': details.get('parameters', []),
-                'Responses': details.get('responses', 'N/A'),
+                'Responses': details.get('responses', ''),
                 'API Section': api_section
             })
     return path_details
@@ -28,15 +28,15 @@ def expand_schema(schema_name, schemas, parent=''):
     schema_details = []
 
     for prop_name, prop_info in properties.items():
-        prop_type = prop_info.get('type', 'N/A')
-        prop_min_length = prop_info.get('minLength', 'N/A')
-        prop_max_length = prop_info.get('maxLength', 'N/A')
-        prop_pattern = prop_info.get('pattern', 'N/A')
+        prop_type = prop_info.get('type', '')
+        prop_min_length = prop_info.get('minLength', '')
+        prop_max_length = prop_info.get('maxLength', '')
+        prop_pattern = prop_info.get('pattern', '')
         if prop_min_length == prop_max_length:
             prop_length = prop_min_length
         else:
-            prop_length = 'N/A'
-        prop_description = prop_info.get('description', 'N/A')
+            prop_length = ''
+        prop_description = prop_info.get('description', '')
         
         full_prop_name = f"{parent}.{prop_name}" if parent else prop_name
         
@@ -130,6 +130,25 @@ def populate_excel_template(yaml_file, output_file):
             # Write the identifier and schema DataFrames to the new sheet
             identifier_df.to_excel(writer, sheet_name=sheet_name, index=False, header=False)
             schema_df.to_excel(writer, sheet_name=sheet_name, startrow=1, index=False)
+
+                       # Get the worksheet
+            worksheet = writer.sheets[sheet_name]
+
+            # Write the method identifier at the top
+            worksheet.cell(row=1, column=1).value = f"Method: {method}"
+
+            # Adjust the column widths
+            for column in worksheet.columns:
+                max_length = 0
+                column_letter = column[0].column_letter
+                for cell in column:
+                    try:
+                        if len(str(cell.value)) > max_length:
+                            max_length = len(cell.value)
+                    except:
+                        pass
+                adjusted_width = (max_length + 2)
+                worksheet.column_dimensions[column_letter].width = adjusted_width
 
 
 
